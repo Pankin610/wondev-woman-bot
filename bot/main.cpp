@@ -56,8 +56,6 @@ inline string getStep(int unit, int dx, int dy, int bx, int by, bool is_push = f
 string best_step = "";
 
 int state_val[5] = {1, 3, 7, 20, 0};
-int o = 1, vis[7][7];
-queue< pair< int, pair<int, int> > > q;
 
 inline int EvaluateGameState() {
     int sum = 0;
@@ -65,37 +63,32 @@ inline int EvaluateGameState() {
         for (int unit = 0; unit < 2; unit++) {
             if (px[p][unit] == -1)
                 continue;
-            q.push(make_pair(p, make_pair(px[p][unit], py[p][unit])));
-            vis[px[p][unit]][py[p][unit]] = o;
-        }
-    }
+            int x = px[p][unit], y = py[p][unit];
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0)
+                        continue;
+                    if (!valid(x + dx, y + dy))
+                        continue;
+                    if (game_table[x + dx][y + dy] < '0' || game_table[x + dx][y + dy] > '3')
+                        continue;
+                    if (make_pair(x + dx, y + dy) == make_pair(px[cur_player][unit ^ 1], py[cur_player][unit ^ 1]))
+                        continue;
+                    if (game_table[x + dx][y + dy] - game_table[x][y] > 1)
+                        continue;
+                    if (make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][0], py[cur_player ^ 1][0]) ||
+                        make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1]))
+                        continue;
 
-    while(!q.empty()) {
-        int x = q.front().second.first, y = q.front().second.second;
-        int p = q.front().first;
-
-        q.pop();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (!valid(x + dx, y + dy))
-                    continue;
-                if (vis[x + dx][y + dy] == o)
-                    continue;
-                if (game_table[x + dx][y + dy] < '0' || game_table[x + dx][y + dy] > '3')
-                    continue;
-                if (game_table[x + dx][y + dy] - game_table[x][y] > 1)
-                    continue;
-                if (p == 0)
-                    sum += state_val[game_table[x + dx][y + dy] - '0'];
-                else
-                    sum -= state_val[game_table[x + dx][y + dy] - '0'];
-                q.push(make_pair(p, make_pair(x + dx, y + dy)));
-                vis[x + dx][y + dy] = o;
+                    if (p == 0)
+                        sum += state_val[game_table[x + dx][y + dy] - '0'];
+                    else
+                        sum -= state_val[game_table[x + dx][y + dy] - '0'];
+                }
             }
         }
     }
 
-    o++;
     return sum;
 }
 
