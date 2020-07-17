@@ -55,9 +55,53 @@ inline string getStep(int unit, int dx, int dy, int bx, int by, bool is_push = f
 
 string best_step = "";
 
+int state_val[5] = {1, 3, 7, 20, 0};
+int o = 1, vis[7][7];
+queue< pair< int, pair<int, int> > > q;
+
+inline int EvaluateGameState() {
+    int sum = 0;
+    for (int p = 0; p < 2; p++) {
+        for (int unit = 0; unit < 2; unit++) {
+            if (px[p][unit] == -1)
+                continue;
+            q.push(make_pair(p, make_pair(px[p][unit], py[p][unit])));
+            vis[px[p][unit]][py[p][unit]] = o;
+        }
+    }
+
+    while(!q.empty()) {
+        int x = q.front().second.first, y = q.front().second.second;
+        int p = q.front().first;
+
+        q.pop();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (!valid(x + dx, y + dy))
+                    continue;
+                if (vis[x + dx][y + dy] == o)
+                    continue;
+                if (game_table[x + dx][y + dy] < '0' || game_table[x + dx][y + dy] > '3')
+                    continue;
+                if (game_table[x + dx][y + dy] - game_table[x][y] > 1)
+                    continue;
+                if (p == 0)
+                    sum += state_val[game_table[x + dx][y + dy] - '0'];
+                else
+                    sum -= state_val[game_table[x + dx][y + dy] - '0'];
+                q.push(make_pair(p, make_pair(x + dx, y + dy)));
+                vis[x + dx][y + dy] = o;
+            }
+        }
+    }
+
+    o++;
+    return sum;
+}
+
 int compute(int deapth, int alpha, int beta, int cur_score) {
     if (deapth == 0) {
-        return cur_score;
+        return cur_score * 15 + EvaluateGameState();
     }
 
     int coef = 1;
@@ -68,7 +112,7 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
 
     for (int unit = 0; unit < 2 && !block[cur_player]; unit++) {
         int x = px[cur_player][unit], y = py[cur_player][unit];
-        if (make_pair(x, y) == make_pair(-1, -1))
+        if (x == -1)
             continue;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
