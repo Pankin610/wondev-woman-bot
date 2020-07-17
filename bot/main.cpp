@@ -19,8 +19,8 @@ inline bool valid(int x, int y) {
 }
 
 int hash_, px[2][2], py[2][2], cur_player, deapth;
-bool block[2];
-string game_table[7];
+bool block[2], adj[8][8], changed[8][8];
+string game_table[7], new_game_table[7];
 
 inline string getStep(int unit, int dx, int dy, int bx, int by, bool is_push = false) {
     string res = "MOVE&BUILD ";
@@ -56,6 +56,7 @@ inline string getStep(int unit, int dx, int dy, int bx, int by, bool is_push = f
 string best_step = "";
 
 int state_val[5] = {1, 3, 7, 20, 0};
+int c_x, c_y;
 
 inline int EvaluateGameState() {
     int sum = 0;
@@ -72,12 +73,12 @@ inline int EvaluateGameState() {
                         continue;
                     if (game_table[x + dx][y + dy] < '0' || game_table[x + dx][y + dy] > '3')
                         continue;
-                    if (make_pair(x + dx, y + dy) == make_pair(px[cur_player][unit ^ 1], py[cur_player][unit ^ 1]))
-                        continue;
                     if (game_table[x + dx][y + dy] - game_table[x][y] > 1)
                         continue;
-                    if (make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][0], py[cur_player ^ 1][0]) ||
-                        make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1]))
+                    if (x + dx == px[cur_player][unit ^ 1] && y + dy == py[cur_player][unit ^ 1])
+                        continue;
+                    if ((x + dx == px[cur_player ^ 1][0] && y + dy == py[cur_player ^ 1][0]) ||
+                        (x + dx == px[cur_player ^ 1][1] && y + dy == py[cur_player ^ 1][1]))
                         continue;
 
                     if (p == 0)
@@ -115,15 +116,15 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
                     continue;
                 if (game_table[x + dx][y + dy] < '0' || game_table[x + dx][y + dy] > '3')
                     continue;
-                if (make_pair(x + dx, y + dy) == make_pair(px[cur_player][unit ^ 1], py[cur_player][unit ^ 1]))
-                    continue;
                 if (game_table[x + dx][y + dy] - game_table[x][y] > 1)
+                    continue;
+                if (x + dx == px[cur_player][unit ^ 1] && y + dy == py[cur_player][unit ^ 1])
                     continue;
 
                 int nx = x + dx, ny = y + dy;
 
-                if (make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][0], py[cur_player ^ 1][0]) ||
-                    make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1])) {
+                if ((x + dx == px[cur_player ^ 1][0] && y + dy == py[cur_player ^ 1][0]) ||
+                    (x + dx == px[cur_player ^ 1][1] && y + dy == py[cur_player ^ 1][1])) {
 
                     for (int bx = -1; bx <= 1; bx++) {
                          for (int by = -1; by <= 1; by++) {
@@ -137,17 +138,15 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
                                 continue;
                             if (game_table[nx + bx][ny + by] < '0' || game_table[nx + bx][ny + by] > '3')
                                 continue;
-                            if (make_pair(nx + bx, ny + by) == make_pair(px[cur_player ^ 1][0], py[cur_player ^ 1][0]) ||
-                                make_pair(nx + bx, ny + by) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1]) ||
-                                make_pair(nx + bx, ny + by) == make_pair(px[cur_player][unit ^ 1], py[cur_player][unit ^ 1])) {
-
+                            if ((nx + bx == px[cur_player ^ 1][0] && ny + by == py[cur_player ^ 1][0]) ||
+                                (nx + bx == px[cur_player ^ 1][1] && ny + by == py[cur_player ^ 1][1]) ||
+                                (nx + bx == px[cur_player][unit ^ 1] && ny + by == py[cur_player][unit ^ 1]))
                                 continue;
-                            }
                             if (game_table[nx + bx][ny + by] - game_table[nx][ny] > 1)
                                 continue;
 
                             int e_unit = 0;
-                            if (make_pair(x + dx, y + dy) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1]))
+                            if (x + dx == px[cur_player ^ 1][1] && y + dy == py[cur_player ^ 1][1])
                                 e_unit = 1;
 
                             px[cur_player ^ 1][e_unit] += bx;
@@ -160,6 +159,8 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
                                 score = new_score * coef;
                                 if (deapth == mx_deapth) {
                                     best_step = getStep(unit, dx, dy, bx, by, true);
+                                    c_x = x + dx;
+                                    c_y = y + dy;
                                 }
                                 if (cur_player == 0)
                                     alpha = max(alpha, new_score);
@@ -185,12 +186,10 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
                             continue;
                         if (game_table[nx + bx][ny + by] < '0' || game_table[nx + bx][ny + by] > '3')
                             continue;
-                        if (make_pair(nx + bx, ny + by) == make_pair(px[cur_player ^ 1][0], py[cur_player ^ 1][0]) ||
-                            make_pair(nx + bx, ny + by) == make_pair(px[cur_player ^ 1][1], py[cur_player ^ 1][1]) ||
-                            make_pair(nx + bx, ny + by) == make_pair(px[cur_player][unit ^ 1], py[cur_player][unit ^ 1])) {
-
+                        if ((nx + bx == px[cur_player ^ 1][0] && ny + by == py[cur_player ^ 1][0]) ||
+                            (nx + bx == px[cur_player ^ 1][1] && ny + by == py[cur_player ^ 1][1]) ||
+                            (nx + bx == px[cur_player][unit ^ 1] && ny + by == py[cur_player][unit ^ 1]))
                             continue;
-                        }
 
                         px[cur_player][unit] += dx;
                         py[cur_player][unit] += dy;
@@ -205,6 +204,8 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
                             if (deapth == mx_deapth) {
                                 //cerr << dx << " " << dy << " " << bx << " " << by << " " << getStep(unit, dx, dy, bx, by) << endl;
                                 best_step = getStep(unit, dx, dy, bx, by);
+                                c_x = nx + bx;
+                                c_y = ny + by;
                             }
                             if (cur_player == 0)
                                 alpha = max(alpha, new_score);
@@ -237,7 +238,7 @@ int compute(int deapth, int alpha, int beta, int cur_score) {
     return score * coef;
 }
 
-double cur_limit = 0.005;
+double cur_limit = 0.008;
 clock_t start_time;
 inline bool tooLate() {
     return (double)(clock() - start_time) / CLOCKS_PER_SEC > cur_limit;
@@ -253,7 +254,18 @@ int main()
     // game loop
     while (1) {
         for (int i = 0; i < sz; i++) {
+            string o_row = game_table[i];
             cin >> game_table[i];
+            for (int j = 0; j < sz; j++) {
+                if (game_table[i][j] == '.')
+                    game_table[i][j] = '4';
+            }
+            if (!fst) {
+                for (int j = 0; j < sz; j++) {
+                    changed[i][j] = (o_row[j] != game_table[i][j]);
+                    adj[i][j] = false;
+                }
+            }
         }
         for (int p = 0; p < 2; p++) {
             for (int i = 0; i < unitsPerPlayer; i++) {
@@ -263,16 +275,71 @@ int main()
 
         int legalActions;
         cin >> legalActions; cin.ignore();
+        string act = "i'm out";
         for (int i = 0; i < legalActions; i++) {
             string atype;
-            int index;
+            string index;
             string dir1;
             string dir2;
             cin >> atype >> index >> dir1 >> dir2; cin.ignore();
+            act = atype + index + dir1 + dir2;
         }
         best_step = "";
         block[0] = block[1] = false;
         cur_player = 0;
+
+        for (int unit = 0; unit < 2; unit++) {
+            int x = px[0][unit],
+                y = py[0][unit];
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (!valid(x + dx, y + dy))
+                        continue;
+                    adj[x + dx][y + dy] = true;
+                }
+            }
+        }
+
+        vector< pair<int, int> > choices;
+
+        for (int i = 0; i < 2; i++) {
+            if (px[1][i] != -1)
+                continue;
+            vector< pair<int, int> > options;
+
+            for (int x = 0; x < sz; x++) {
+                for (int y = 0; y < sz; y++) {
+
+                    if (game_table[x][y] < '0' || game_table[x][y] > '3' || adj[x][y])
+                        continue;
+                    bool good = true;
+                    for (int p = 0; p < 2; p++)
+                        for (int unit = 0; unit < 2; unit++)
+                            if (px[p][unit] == x && py[p][unit] == y)
+                                good = false;
+                    if (!good)
+                        continue;
+                    good = false;
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dy = -1; dy <= 1; dy++) {
+                            if (!valid(x + dx, y + dy))
+                                continue;
+                            if (changed[x + dx][y + dy])
+                                good = true;
+                        }
+                    }
+                    if (good)
+                        options.push_back(make_pair(x, y));
+                }
+            }
+
+            if (options.empty())
+                continue;
+            random_shuffle(options.begin(), options.end());
+            px[1][i] = options.back().first;
+            py[1][i] = options.back().second;
+            choices.push_back(options.back());
+        }
 
         if (!fst)
             cur_limit = 0.001;
@@ -282,8 +349,14 @@ int main()
             compute(mx_deapth, -2000000000, 2000000000, 0);
         }
 
+        game_table[c_x][c_y] += 1;
 
-        cout << best_step << " " << mx_deapth - 1 << endl;
+        if (best_step == "")
+            best_step = act;
+        cout << best_step << " " << mx_deapth - 1;
+        for (int i = 0; i < choices.size(); i++)
+            cout << " " << "predict " << " " << choices[i].second << " " << choices[i].first;
+        cout << endl;
         fst = false;
     }
 }
